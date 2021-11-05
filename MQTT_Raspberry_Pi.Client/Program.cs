@@ -7,10 +7,34 @@ using MQTTnet.Client.Disconnecting;
 using MQTTnet.Extensions.ManagedClient;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Threading;
 
+WriteLine("Start App");
+
+var _url = "";
+var _topic = "topic/json";
+var _port = 8200;
+do
+{
+    Write("Site Address:");
+    _url = ReadLine();
+} while (string.IsNullOrWhiteSpace(_url));
+do
+{
+    Write("Port number:");
+
+} while (!int.TryParse(ReadLine(), out _port));
+WriteLine("Enter topic( if empty use defualt topic):");
+var _tempTopic = ReadLine();
+if (string.IsNullOrWhiteSpace(_tempTopic))
+{
+    WriteLine("use defualt topic: " + _topic);
+}
+else
+    _topic = _tempTopic;
 var builder = new MqttClientOptionsBuilder()
     .WithClientId(Guid.NewGuid().ToString())
-    .WithTcpServer("localhost", 707);
+    .WithTcpServer(_url, _port);
 var option = new ManagedMqttClientOptionsBuilder().WithAutoReconnectDelay(TimeSpan.FromSeconds(50)).WithClientOptions(builder.Build()).Build();
 var client = new MqttFactory().CreateManagedMqttClient();
 client.ConnectedHandler = new MqttClientConnectedHandlerDelegate(OnConnected);
@@ -20,7 +44,7 @@ await client.StartAsync(option);
 while (true)
 {
     string json = JsonSerializer.Serialize(new { message = "Heyo :)", sent = DateTimeOffset.UtcNow });
-    await client.PublishAsync("topic/json", json);
+    await client.PublishAsync(_topic, json);
     await Task.Delay(1000);
 }
 static void OnConnected(MqttClientConnectedEventArgs obj)
